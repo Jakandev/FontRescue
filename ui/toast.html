@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FontRescue</title>
+<style>
+  :root{
+    --txt:#e7eaef; --dim:#8a93a2; --line:#2d333d; --accent:#8b7bff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    background:#191d23; overflow:hidden; height:auto;
+    font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+    -webkit-user-select:none; user-select:none;
+  }
+  .toast{
+    display:flex; gap:11px; align-items:flex-start;
+    padding:14px 14px 13px; background:#191d23;
+    cursor:pointer;
+  }
+  .toast:hover{background:#1e232b}
+  .toast:focus-visible{outline:2px solid #8b7bff;outline-offset:-2px}
+  .ticon{width:40px;height:40px;flex:0 0 auto;position:relative;display:grid;place-items:center}
+  .ticon img{width:100%;height:100%;display:block}
+  /* amber badge keeps the "needs attention" signal now that the mark is white */
+  .ticon .brk{
+    display:none;position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;
+    background:#ffb020;border:2px solid #191d23;
+  }
+  .ticon.warn .brk{display:block}
+  .tbody{flex:1;min-width:0}
+  .ttitle{font-size:12.5px;font-weight:650;letter-spacing:-.01em;color:var(--txt);line-height:1.3}
+  .ttext{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.45;word-break:break-word}
+  .tactions{display:flex;gap:6px;margin-top:10px}
+  .mini{
+    font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid var(--line);
+    color:var(--txt);background:#232a33;cursor:pointer;font-family:inherit;
+  }
+  .mini:hover{background:#2b333d}
+  .mini.p{background:rgba(139,123,255,.16);border-color:rgba(139,123,255,.45);color:#c6bdff}
+</style>
+</head>
+<body>
+<div class="toast" id="card" role="button" tabindex="0" title="Open FontRescue">
+  <div class="ticon" id="ico"><img src="logo.svg" alt=""><span class="brk"></span></div>
+  <div class="tbody">
+    <div class="ttitle" id="title">Fonts ready</div>
+    <div class="ttext" id="body"></div>
+    <div class="tactions">
+      <button class="mini p" id="reopen">Reopen project</button>
+      <button class="mini" id="dismiss">Dismiss</button>
+    </div>
+  </div>
+</div>
+<script>
+const invoke = (cmd, args) => window.__TAURI__.core.invoke(cmd, args || {});
+let cur = null;
+
+function fit(){
+  const card = document.getElementById("card");
+  const h = Math.ceil(card.getBoundingClientRect().height);
+  invoke("fit_toast", { height: h }).catch(() => {});
+}
+
+window.render = function(d){
+  cur = d;
+  document.getElementById("title").textContent = d.title;
+  document.getElementById("body").textContent = d.body;
+  document.getElementById("ico").classList.toggle("warn", !d.ok);
+  // Premiere needs no reopen; only After Effects does
+  document.getElementById("reopen").style.display = d.ok && d.reopen ? "" : "none";
+  requestAnimationFrame(fit);
+};
+
+function openApp(){
+  invoke("show_window").catch(() => {});
+  invoke("dismiss_toast").catch(() => {});
+}
+
+document.getElementById("card").addEventListener("click", (ev) => {
+  if (ev.target.closest("button")) return;      // the inner buttons do their own thing
+  openApp();
+});
+
+document.getElementById("card").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); openApp(); }
+});
+
+document.getElementById("reopen").onclick = () => invoke("open_project", { path: cur ? cur.path : "" });
+document.getElementById("dismiss").onclick = () => invoke("dismiss_toast");
+
+invoke("get_toast").then((d) => { if (d) window.render(d); }).catch(() => {});
+setTimeout(fit, 250);
+</script>
+</body>
+</html>

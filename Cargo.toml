@@ -1,0 +1,57 @@
+[package]
+name = "fontrescue"
+version = "0.1.0"
+edition = "2021"
+description = "Installs the fonts an After Effects / Premiere project needs"
+license = "MIT"
+# two binaries exist (app + probe); this is the one the installer ships
+default-run = "FontRescue"
+
+[lib]
+name = "fontrescue"
+path = "src/lib.rs"
+
+[[bin]]
+name = "FontRescue"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[features]
+# `cargo build --features probe --bin fontrescue-probe` to get the dev harness
+probe = []
+
+[dependencies]
+flate2 = "1"
+zip = "2"
+regex = "1"
+ttf-parser = "0.25"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-dialog = "2"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+] }
+
+# developer tool: kept out of the shipped installer
+[[bin]]
+name = "fontrescue-probe"
+path = "src/bin/probe.rs"
+required-features = ["probe"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
